@@ -1,28 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HLS Player</title>
+    <title>HLS Video Player with Resolution Picker</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        video {
+            max-width: 90%;
+            height: auto;
+            background: black;
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-    <video id="video" controls width="640" height="360"></video>
 
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script>
-    if (Hls.isSupported()) {
-        var video = document.getElementById('video');
-        var hls = new Hls();
-        hls.loadSource('output/master.m3u8');
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            video.play();
-        });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = 'output/master.m3u8';
-        video.addEventListener('loadedmetadata', function() {
-            video.play();
-        });
+<video id="video" controls></video>
+
+<select id="resolution-picker">
+    <option value="720p" selected>720p</option>
+    <option value="480p">480p</option>
+    <option value="360p">360p</option>
+</select>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+const video = document.getElementById('video');
+const picker = document.getElementById('resolution-picker');
+let hls;
+
+function loadStream(resolution) {
+    if (hls) {
+        hls.destroy();
     }
-    </script>
+
+    hls = new Hls();
+    hls.loadSource(`output/${resolution}/index.m3u8`);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play();
+    });
+}
+
+// Initialize with default resolution
+loadStream(picker.value);
+
+picker.addEventListener('change', () => {
+    const currentTime = video.currentTime;
+    const isPaused = video.paused;
+
+    loadStream(picker.value);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.currentTime = currentTime;
+        if (!isPaused) {
+            video.play();
+        }
+    });
+});
+</script>
+
 </body>
 </html>
+
 
